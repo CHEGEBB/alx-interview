@@ -1,59 +1,55 @@
 #!/usr/bin/python3
 """
-Module for UTF-8 Validation
+Module for Validating UTF-8 Encoding
 """
 
-def validUTF8(data):
+def validate_utf8(data):
     """
-    Determine if a given data set represents a valid UTF-8 encoding.
-    :param data: List of integers where each integer represents one byte
-    :return: True if data is a valid UTF-8 encoding, otherwise False
+    Check if the given list of integers represents valid UTF-8 encoded data.
+    :param data: List of integers
+    :return: True if valid UTF-8 encoding, otherwise False
     """
-    # This variable will keep track of the number of bytes remaining in the current UTF-8 character
-    remaining_bytes = 0
+    # Counter for the number of bytes remaining in the current UTF-8 character
+    bytes_remaining = 0
 
-    # Masks to check the leading bits in a byte to determine the byte's role in a UTF-8 character
-    mask1 = 1 << 7  # 10000000 in binary
-    mask2 = 1 << 6  # 01000000 in binary
+    # Bit masks to identify the leading bits of each byte
+    first_bit_mask = 1 << 7  # Binary: 10000000
+    second_bit_mask = 1 << 6  # Binary: 01000000
 
-    # Iterate through each byte in the data list
+    # Iterate over each integer in the data list
     for byte in data:
-        # Create a mask for checking the leading bits of the current byte
-        mask = 1 << 7
-        
-        if remaining_bytes == 0:
-            # If we are not in the middle of validating a multi-byte character
-            # Count the number of leading 1's to determine the length of the character
-            while mask & byte:
-                remaining_bytes += 1
-                mask >>= 1
+        bitmask = 1 << 7
+        if bytes_remaining == 0:
+            # Count the number of leading 1's in the first byte
+            while bitmask & byte:
+                bytes_remaining += 1
+                bitmask >>= 1
 
-            # For a 1-byte character, we should have zero leading 1's (i.e., 0xxxxxxx)
-            if remaining_bytes == 0:
+            # If it's a single-byte character (0xxxxxxx) or continuation byte (10xxxxxx)
+            if bytes_remaining == 0:
                 continue
 
-            # UTF-8 characters can only be between 1 and 4 bytes long
-            if remaining_bytes == 1 or remaining_bytes > 4:
+            # UTF-8 encoded characters should be between 1 and 4 bytes long
+            if bytes_remaining == 1 or bytes_remaining > 4:
                 return False
         else:
-            # If we are in the middle of validating a multi-byte character
-            # Each subsequent byte must start with '10xxxxxx'
-            if not (byte & mask1 and not (byte & mask2)):
+            # Subsequent bytes must start with 10xxxxxx
+            if not (byte & first_bit_mask and not (byte & second_bit_mask)):
                 return False
 
-        # Decrement the count of remaining bytes to validate for the current character
-        remaining_bytes -= 1
+        # Decrease the counter for the bytes remaining in the current character
+        bytes_remaining -= 1
 
-    # If we have processed all characters correctly, remaining_bytes should be zero
-    return remaining_bytes == 0
+    # Ensure all characters have been completely validated
+    return bytes_remaining == 0
 
-# Main block for testing the function with sample data sets
+# Test cases
 if __name__ == "__main__":
-    test_data1 = [65]
-    print(validUTF8(test_data1))  # Expected output: True
+    sample_data1 = [65]
+    print(validate_utf8(sample_data1))  # Expected output: True
 
-    test_data2 = [80, 121, 116, 104, 111, 110, 32, 105, 115, 32, 99, 111, 111, 108, 33]
-    print(validUTF8(test_data2))  # Expected output: True
+    sample_data2 = [80, 121, 116, 104, 111, 110, 32, 105, 115, 32, 99, 111, 111, 108, 33]
+    print(validate_utf8(sample_data2))  # Expected output: True
 
-    test_data3 = [229, 65, 127, 256]
-    print(validUTF8(test_data3))  # Expected output: False
+    sample_data3 = [229, 65, 127, 256]
+    print(validate_utf8(sample_data3))  # Expected output: False
